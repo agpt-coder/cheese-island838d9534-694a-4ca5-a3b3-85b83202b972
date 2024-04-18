@@ -1,0 +1,152 @@
+// datasource db defines the database connection settings.
+// It is configured for PostgreSQL and uses an environment variable for the connection URL.
+// The 'extensions' feature enables the use of PostgreSQL-specific data types.
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+}
+
+// generator db configures Prisma Client settings.
+// It is set up to use Prisma Client Python with asyncio interface and specific features.
+generator db {
+  provider             = "prisma-client-py"
+  interface            = "asyncio"
+  recursive_type_depth = 5
+  previewFeatures      = ["postgresqlExtensions"]
+}
+
+model User {
+  id             String   @id @default(dbgenerated("gen_random_uuid()"))
+  email          String   @unique
+  hashedPassword String
+  role           UserRole
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  PlayerProfile         PlayerProfile?
+  AdminProfile          AdminProfile?
+  ContentCreatorProfile ContentCreatorProfile?
+}
+
+model PlayerProfile {
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String   @unique
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  Characters Character[]
+}
+
+model AdminProfile {
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  createdAt DateTime @default(now())
+  userId    String   @unique
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ContentCreatorProfile {
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  createdAt DateTime @default(now())
+  userId    String   @unique
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  Quests    Quest[]
+  Dialogues Dialogue[]
+}
+
+model Character {
+  id                String   @id @default(dbgenerated("gen_random_uuid()"))
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  name              String
+  customizationData Json
+
+  PlayerProfileId String
+  PlayerProfile   PlayerProfile @relation(fields: [PlayerProfileId], references: [id], onDelete: Cascade)
+
+  Inventories         Inventory[]
+  QuestParticipations QuestParticipation[]
+  Dialogues           Dialogue[] // Relationship added for Dialogues here
+}
+
+model Quest {
+  id          String   @id @default(dbgenerated("gen_random_uuid()"))
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  title       String
+  description String
+  narrative   String
+  isActive    Boolean  @default(true)
+
+  ContentCreatorProfileId String
+  ContentCreatorProfile   ContentCreatorProfile @relation(fields: [ContentCreatorProfileId], references: [id], onDelete: Cascade)
+
+  QuestParticipations QuestParticipation[]
+}
+
+model Dialogue {
+  id          String    @id @default(dbgenerated("gen_random_uuid()"))
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  content     String
+  characterId String
+  Character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  ContentCreatorProfileId String
+  ContentCreatorProfile   ContentCreatorProfile @relation(fields: [ContentCreatorProfileId], references: [id], onDelete: Cascade)
+}
+
+model QuestParticipation {
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
+  createdAt DateTime @default(now())
+
+  CharacterId String
+  Character   Character @relation(fields: [CharacterId], references: [id], onDelete: Cascade)
+
+  QuestId String
+  Quest   Quest  @relation(fields: [QuestId], references: [id], onDelete: Cascade)
+
+  status ParticipationStatus
+}
+
+model Inventory {
+  id          String    @id @default(dbgenerated("gen_random_uuid()"))
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  CharacterId String
+  Character   Character @relation(fields: [CharacterId], references: [id], onDelete: Cascade)
+
+  Items Item[]
+}
+
+model Item {
+  id          String   @id @default(dbgenerated("gen_random_uuid()"))
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  name        String
+  description String
+  itemType    ItemType
+
+  InventoryId String
+  Inventory   Inventory @relation(fields: [InventoryId], references: [id], onDelete: Cascade)
+}
+
+enum UserRole {
+  PLAYER
+  ADMIN
+  CONTENT_CREATOR
+}
+
+enum ParticipationStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+}
+
+enum ItemType {
+  CONSUMABLE
+  EQUIPMENT
+  MATERIAL
+}
+

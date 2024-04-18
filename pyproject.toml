@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "cheese-island"
+version = "0.1.0"
+description = "A Cheese inspired game based on monkey island"
+authors = ["AutoGPT <info@agpt.co>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.11"
+fastapi = "*"
+prisma = "*"
+pydantic = "*"
+uvicorn = "*"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
